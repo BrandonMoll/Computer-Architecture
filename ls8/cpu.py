@@ -5,12 +5,17 @@ import sys
 class CPU:
     """Main CPU class."""
 
-    def __init__(self):
+    def __init__(self, ram = [0] * 256, reg = [0] * 8, pc = 0):
         """Construct a new CPU."""
-        pass
+        self.ram = ram,
+        self.reg = reg
+        self.pc = pc
 
     def load(self):
-        """Load a program into memory."""
+
+
+        # for i in range(len(program)):
+        #     self.ram[i] = program[i]
 
         address = 0
 
@@ -26,6 +31,9 @@ class CPU:
             0b00000001, # HLT
         ]
 
+        prg_length = len(program)
+        self.ram = [0] * prg_length
+
         for instruction in program:
             self.ram[address] = instruction
             address += 1
@@ -39,6 +47,13 @@ class CPU:
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
+    
+    def ram_read(self, index):
+        return print(self.reg[index])
+
+    def ram_write(self, index, value):
+        self.reg[index] = value
+        return print(f'R{index} is now {self.reg[index]}')
 
     def trace(self):
         """
@@ -61,5 +76,22 @@ class CPU:
         print()
 
     def run(self):
-        """Run the CPU."""
-        pass
+        running = True
+        while running:
+            command = self.ram[self.pc]
+
+            if command == 0b10000010:
+                self.ram_write(self.ram[self.pc+1], self.ram[self.pc+2])
+                self.pc += 3
+            if command == 0b01000111:
+                self.ram_read(self.ram[self.pc+1])
+                self.pc += 2
+            if command == 0b00000001:
+                print('Exiting Program')
+                running = False
+            
+            
+
+
+
+
