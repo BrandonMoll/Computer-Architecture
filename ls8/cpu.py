@@ -12,32 +12,31 @@ class CPU:
         self.pc = pc
 
     def load(self):
-
-
-        # for i in range(len(program)):
-        #     self.ram[i] = program[i]
-
+        self.ram = [0] * 256
         address = 0
+        if len(sys.argv) != 2:
+            print('Add a file name to run')
+            print(sys.stderr)
+            sys.exit(1)
 
-        # For now, we've just hardcoded a program:
+        try:
+            with open(sys.argv[1]) as file:
+                for line in file:
+                    comment_split = line.split('#')
+                    possible_number = comment_split[0]
+                    if possible_number == '':
+                        continue
+                    first_bit = possible_number[0]
+                    if first_bit == '1' or first_bit == '0':
+                        op = possible_number[0:8]
+                        int_op = int(op, 2)
+                        self.ram_write(address, int_op)
+                        address += 1
+                        
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
-
-        prg_length = len(program)
-        self.ram = [0] * prg_length
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
-
+        except:
+            print('file not found')
+            sys.exit(2)
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -49,11 +48,11 @@ class CPU:
             raise Exception("Unsupported ALU operation")
     
     def ram_read(self, index):
-        return print(self.reg[index])
+        return self.ram[index]
 
     def ram_write(self, index, value):
-        self.reg[index] = value
-        return print(f'R{index} is now {self.reg[index]}')
+        self.ram[index] = value
+        return print(f'Ram at index {index} is now {self.ram[index]}')
 
     def trace(self):
         """
@@ -77,17 +76,36 @@ class CPU:
 
     def run(self):
         running = True
+        LDI = 0b10
+        MULT = 0b10
+        PRN = 0b0111
         while running:
             command = self.ram[self.pc]
+            args = command >> 6
+            alu = (command >> 5) & 0b00000001  
+            op = command & 0b00001111
 
-            if command == 0b10000010:
-                self.ram_write(self.ram[self.pc+1], self.ram[self.pc+2])
-                self.pc += 3
-            if command == 0b01000111:
-                self.ram_read(self.ram[self.pc+1])
-                self.pc += 2
+            if alu == 0:
+                if op == LDI:
+                    self.reg[self.ram[self.pc+1]] = self.ram[self.pc + 2]
+                    print(f'R{self.ram[self.pc+1]} is now {self.ram[self.pc + 2]}')
+                    self.pc += 1 + args
+                elif op == PRN:
+                    print(self.reg[self.ram[self.pc + 1]])
+                    self.pc += 1 + args
+            elif alu == 1:
+                if op == MULT:
+                    num_1 = self.ram[self.pc + 1]
+                    num_2 = self.ram[self.pc + 2]
+                    print(num_1 * num_2)
+                    self.pc += 1 + args
+                
+
             if command == 0b00000001:
-                print('Exiting Program')
+                print('Halting program')
+                running = False
+            elif self.pc > 14:
+                print('Exiting with self pc')
                 running = False
             
             
