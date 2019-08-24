@@ -87,17 +87,31 @@ class CPU:
 
             if alu == 0:
                 if op == LDI:
-                    self.reg[self.ram[self.pc+1]] = self.ram[self.pc + 2]
-                    print(f'R{self.ram[self.pc+1]} is now {self.ram[self.pc + 2]}')
+                    index = self.ram[self.pc + 1]
+                    value = self.ram[self.pc + 2]
+
+                    self.reg[index] = value
+                    print(f'R{index} is now {self.reg[index]}')
+
                     self.pc += 1 + args
+
                 elif op == PRN:
-                    print(self.reg[self.ram[self.pc + 1]])
+                    index = self.ram[self.pc + 1]
+
+                    print(self.reg[index])
+
                     self.pc += 1 + args
+
             elif alu == 1:
                 if op == MULT:
-                    num_1 = self.reg[self.ram[self.pc + 1]]
-                    num_2 = self.reg[self.ram[self.pc + 2]]
+                    index_1 = self.ram[self.pc + 1]
+                    index_2 = self.ram[self.pc + 2]
+
+                    num_1 = self.reg[index_1]
+                    num_2 = self.reg[index_2]
+
                     print(num_1 * num_2)
+                    
                     self.pc += 1 + args
                 
 
