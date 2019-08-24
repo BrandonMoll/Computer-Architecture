@@ -5,11 +5,11 @@ import sys
 class CPU:
     """Main CPU class."""
 
-    def __init__(self, ram = [0] * 256, reg = [0] * 8, pc = 0):
+    def __init__(self):
         """Construct a new CPU."""
-        self.ram = ram,
-        self.reg = reg
-        self.pc = pc
+        self.ram = [0] * 256,
+        self.reg = [0] * 8
+        self.pc = 0
 
     def load(self):
         self.ram = [0] * 256
@@ -95,17 +95,14 @@ class CPU:
                     self.pc += 1 + args
             elif alu == 1:
                 if op == MULT:
-                    num_1 = self.ram[self.pc + 1]
-                    num_2 = self.ram[self.pc + 2]
+                    num_1 = self.reg[self.ram[self.pc + 1]]
+                    num_2 = self.reg[self.ram[self.pc + 2]]
                     print(num_1 * num_2)
                     self.pc += 1 + args
                 
 
             if command == 0b00000001:
                 print('Halting program')
-                running = False
-            elif self.pc > 14:
-                print('Exiting with self pc')
                 running = False
             
             
