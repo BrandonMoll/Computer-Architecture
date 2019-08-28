@@ -13,6 +13,7 @@ class CPU:
 
     def load(self):
         self.ram = [0] * 256
+        self.reg[7] = 0xF3
         address = 0
         if len(sys.argv) != 2:
             print('Add a file name to run')
@@ -79,6 +80,8 @@ class CPU:
         LDI = 0b10
         MULT = 0b10
         PRN = 0b0111
+        PUSH = 0b0101
+        POP = 0b0110
         while running:
             command = self.ram[self.pc]
             args = command >> 6
@@ -113,7 +116,25 @@ class CPU:
                     print(num_1 * num_2)
                     
                     self.pc += 1 + args
-                
+                elif op == PUSH:
+                    SP = self.reg[7]
+                    self.reg[7] = ( SP -1 ) % 255
+
+                    reg_address = self.ram[self.pc + 1]
+                    value = self.reg[reg_address]
+
+                    self.ram[SP] = value
+                    self.pc += 1 + args
+
+                elif op == POP:
+                    SP = self.reg[7]
+
+                    value = self.ram[SP]
+                    reg_address = self.ram[self.pc + 1]
+                    self.reg[reg_address] = value
+
+                    self.reg[7] = ( SP + 1) % 255
+                    self.pc += 1 + args
 
             if command == 0b00000001:
                 print('Halting program')
