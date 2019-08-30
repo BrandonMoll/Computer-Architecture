@@ -77,11 +77,13 @@ class CPU:
 
     def run(self):
         running = True
-        LDI = 0b10
-        MULT = 0b10
+        LDI = 0b0010
+        MULT = 0b0010
         PRN = 0b0111
         PUSH = 0b0101
         POP = 0b0110
+        CALL = 0b01010000
+        RET = 0b00010001
         while running:
             command = self.ram[self.pc]
             args = command >> 6
@@ -104,21 +106,10 @@ class CPU:
                     print(self.reg[index])
 
                     self.pc += 1 + args
-
-            elif alu == 1:
-                if op == MULT:
-                    index_1 = self.ram[self.pc + 1]
-                    index_2 = self.ram[self.pc + 2]
-
-                    num_1 = self.reg[index_1]
-                    num_2 = self.reg[index_2]
-
-                    print(num_1 * num_2)
                     
-                    self.pc += 1 + args
                 elif op == PUSH:
+                    self.reg[7] = ( self.reg[7] -1 ) % 255
                     SP = self.reg[7]
-                    self.reg[7] = ( SP -1 ) % 255
 
                     reg_address = self.ram[self.pc + 1]
                     value = self.reg[reg_address]
@@ -134,6 +125,36 @@ class CPU:
                     self.reg[reg_address] = value
 
                     self.reg[7] = ( SP + 1) % 255
+                    self.pc += 1 + args
+
+                elif op == CALL:
+                    register_address = self.ram[self.pc + 1]
+                    address_to_jump_to = self.reg[register_address]
+
+                    next_instruction = self.pc + 2
+                    self.reg[7] = ( self.reg[7] - 1 ) % 255
+                    SP = self.reg[7]
+                    self.ram[SP] = next_instruction
+                    self.pc = address_to_jump_to
+
+                elif op == RET:
+                    SP = self.reg[7]
+                    address_to_return_to = self.ram[SP]
+
+                    self.reg[7] = ( SP + 1 ) % 255
+
+                    self.pc = address_to_return_to
+
+            elif alu == 1:
+                if op == MULT:
+                    index_1 = self.ram[self.pc + 1]
+                    index_2 = self.ram[self.pc + 2]
+
+                    num_1 = self.reg[index_1]
+                    num_2 = self.reg[index_2]
+
+                    print(num_1 * num_2)
+                    
                     self.pc += 1 + args
 
             if command == 0b00000001:
