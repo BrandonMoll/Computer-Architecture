@@ -102,7 +102,6 @@ class CPU:
                     if op == JMP:
                         register_address = self.ram[self.pc + 1]
                         address_to_jump_to = self.reg[register_address]
-                        print('JUMPING', self.pc)
                         self.pc = address_to_jump_to
 
                     elif op == JEQ:
@@ -113,7 +112,6 @@ class CPU:
                             self.pc = address_to_jump_to
                         else:
                             self.pc += args + 1
-                            print('JEQ', self.pc)
 
                     elif op == JNE:
                         equals_flag = self.FL & 0b00000001
@@ -191,8 +189,10 @@ class CPU:
                     
                     self.pc += 1 + args
                 elif op == CMP:
-                    regA = self.ram[self.pc + 1]
-                    regB = self.ram[self.pc + 2]
+                    reg_address_A = self.ram[self.pc + 1]
+                    reg_address_B = self.ram[self.pc + 2]
+                    regA = self.reg[reg_address_A]
+                    regB = self.reg[reg_address_B]
 
                     if regA == regB:
                         self.FL = 0b00000001
