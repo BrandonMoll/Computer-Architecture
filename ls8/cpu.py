@@ -10,6 +10,7 @@ class CPU:
         self.ram = [0] * 256,
         self.reg = [0] * 8
         self.pc = 0
+        self.FL = 0b00000000
 
     def load(self):
         self.ram = [0] * 256
@@ -53,7 +54,7 @@ class CPU:
 
     def ram_write(self, index, value):
         self.ram[index] = value
-        return print(f'Ram at index {index} is now {self.ram[index]}')
+        # return print(f'Ram at index {index} is now {self.ram[index]}')
 
     def trace(self):
         """
@@ -82,68 +83,101 @@ class CPU:
         PRN = 0b0111
         PUSH = 0b0101
         POP = 0b0110
-        CALL = 0b01010000
-        RET = 0b00010001
+        CALL = 0b0000
+        RET = 0b0001
+        JMP = 0b0100
+        CMP = 0b0111
+        JEQ = 0b0101
+        JNE = 0b0110
         while running:
             command = self.ram[self.pc]
             args = command >> 6
-            alu = (command >> 5) & 0b00000001  
+            alu = (command >> 5) & 0b00000001
+            setPC = (command >> 4) & 0b00000001  
             op = command & 0b00001111
 
             if alu == 0:
-                if op == LDI:
-                    index = self.ram[self.pc + 1]
-                    value = self.ram[self.pc + 2]
 
-                    self.reg[index] = value
-                    print(f'R{index} is now {self.reg[index]}')
+                if setPC == 1:
+                    if op == JMP:
+                        register_address = self.ram[self.pc + 1]
+                        address_to_jump_to = self.reg[register_address]
+                        print('JUMPING', self.pc)
+                        self.pc = address_to_jump_to
 
-                    self.pc += 1 + args
+                    elif op == JEQ:
+                        equals_flag = self.FL & 0b00000001
+                        if equals_flag == 0b00000001:
+                            register_address = self.ram[self.pc + 1]
+                            address_to_jump_to = self.reg[register_address]
+                            self.pc = address_to_jump_to
+                        else:
+                            self.pc += args + 1
+                            print('JEQ', self.pc)
 
-                elif op == PRN:
-                    index = self.ram[self.pc + 1]
+                    elif op == JNE:
+                        equals_flag = self.FL & 0b00000001
+                        if equals_flag == 0b00000000:
+                            register_address = self.ram[self.pc + 1]
+                            address_to_jump_to = self.reg[register_address]
+                            self.pc = address_to_jump_to
+                        else:
+                            self.pc += args + 1
 
-                    print(self.reg[index])
+                elif setPC == 0:
+                    if op == LDI:
+                        index = self.ram[self.pc + 1]
+                        value = self.ram[self.pc + 2]
 
-                    self.pc += 1 + args
-                    
-                elif op == PUSH:
-                    self.reg[7] = ( self.reg[7] -1 ) % 255
-                    SP = self.reg[7]
+                        self.reg[index] = value
+                        # print(f'R{index} is now {self.reg[index]}')
 
-                    reg_address = self.ram[self.pc + 1]
-                    value = self.reg[reg_address]
+                        self.pc += 1 + args
 
-                    self.ram[SP] = value
-                    self.pc += 1 + args
+                    elif op == PRN:
+                        index = self.ram[self.pc + 1]
 
-                elif op == POP:
-                    SP = self.reg[7]
+                        print(self.reg[index])
 
-                    value = self.ram[SP]
-                    reg_address = self.ram[self.pc + 1]
-                    self.reg[reg_address] = value
+                        self.pc += 1 + args
+                        
+                    elif op == PUSH:
+                        self.reg[7] = ( self.reg[7] -1 ) % 255
+                        SP = self.reg[7]
 
-                    self.reg[7] = ( SP + 1) % 255
-                    self.pc += 1 + args
+                        reg_address = self.ram[self.pc + 1]
+                        value = self.reg[reg_address]
 
-                elif op == CALL:
-                    register_address = self.ram[self.pc + 1]
-                    address_to_jump_to = self.reg[register_address]
+                        self.ram[SP] = value
+                        self.pc += 1 + args
 
-                    next_instruction = self.pc + 2
-                    self.reg[7] = ( self.reg[7] - 1 ) % 255
-                    SP = self.reg[7]
-                    self.ram[SP] = next_instruction
-                    self.pc = address_to_jump_to
+                    elif op == POP:
+                        SP = self.reg[7]
 
-                elif op == RET:
-                    SP = self.reg[7]
-                    address_to_return_to = self.ram[SP]
+                        value = self.ram[SP]
+                        reg_address = self.ram[self.pc + 1]
+                        self.reg[reg_address] = value
 
-                    self.reg[7] = ( SP + 1 ) % 255
+                        self.reg[7] = ( SP + 1) % 255
+                        self.pc += 1 + args
 
-                    self.pc = address_to_return_to
+                    elif op == CALL:
+                        register_address = self.ram[self.pc + 1]
+                        address_to_jump_to = self.reg[register_address]
+
+                        next_instruction = self.pc + 2
+                        self.reg[7] = ( self.reg[7] - 1 ) % 255
+                        SP = self.reg[7]
+                        self.ram[SP] = next_instruction
+                        self.pc = address_to_jump_to
+
+                    elif op == RET:
+                        SP = self.reg[7]
+                        address_to_return_to = self.ram[SP]
+
+                        self.reg[7] = ( SP + 1 ) % 255
+
+                        self.pc = address_to_return_to
 
             elif alu == 1:
                 if op == MULT:
@@ -156,6 +190,18 @@ class CPU:
                     print(num_1 * num_2)
                     
                     self.pc += 1 + args
+                elif op == CMP:
+                    regA = self.ram[self.pc + 1]
+                    regB = self.ram[self.pc + 2]
+
+                    if regA == regB:
+                        self.FL = 0b00000001
+                    elif regA > regB:
+                        self.FL = 0b00000010
+                    elif regA < regB:
+                        self.FL = 0b00000100
+
+                    self.pc += args + 1
 
             if command == 0b00000001:
                 print('Halting program')
